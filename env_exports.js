@@ -1,0 +1,11 @@
+const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET;
+const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
+const DATABASE_URI = process.env.DATABASE_URI;
+const PORT = process.env.PORT;
+
+module.exports = {
+  REFRESH_TOKEN_SECRET,
+  ACCESS_TOKEN_SECRET,
+  DATABASE_URI,
+  PORT
+};

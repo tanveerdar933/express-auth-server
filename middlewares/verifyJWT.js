@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const { ACCESS_TOKEN_SECRET } = require('../env_exports');
 
 // Middleware function to verify JWT (JSON Web Token)
 const verifyJWT = (req, res, next) => {
@@ -11,7 +12,7 @@ const verifyJWT = (req, res, next) => {
   // Verify the token using the provided secret key
   jwt.verify(
     token,
-    process.env.ACCESS_TOKEN_SECRET,
+    ACCESS_TOKEN_SECRET,
     (err, decoded) => {
       // If token verification fails, return a 403 Forbidden response (invalid token)
       if (err) return res.sendStatus(403);

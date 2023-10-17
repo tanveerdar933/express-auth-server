@@ -1,6 +1,10 @@
 const User = require('../models/User');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const {
+  ACCESS_TOKEN_SECRET,
+  REFRESH_TOKEN_SECRET
+} = require('../env_exports');
 
 // a function to handle user login
 const handleLogin = async (req, res) => {
@@ -26,13 +30,13 @@ const handleLogin = async (req, res) => {
           "roles": roles
         }
       },
-      process.env.ACCESS_TOKEN_SECRET,
+      ACCESS_TOKEN_SECRET,
       { expiresIn: '10s' }
     );
     // Create a refresh token with the username
     const refreshToken = jwt.sign(
       { "username": foundUser.username },
-      process.env.REFRESH_TOKEN_SECRET,
+      REFRESH_TOKEN_SECRET,
       { expiresIn: '1d' }
     );
     // Save the refresh token with the current user in the database
@@ -42,7 +46,7 @@ const handleLogin = async (req, res) => {
     console.log(result);
     console.log(roles);
 
-    // Create a secure HTTP-only cookie to store the refresh token
+    // Create a secure HTTP-only cookie to store the refresh token (validity 1 day)
     res.cookie('jwt', refreshToken, { httpOnly: true, secure: true, sameSite: 'None', maxAge: 24 * 60 * 60 * 1000 });
 
     // Send authorization roles and access token in the response
@@ -53,5 +57,5 @@ const handleLogin = async (req, res) => {
     res.sendStatus(401);
   }
 }
-// Export the login handler function
+
 module.exports = { handleLogin };
