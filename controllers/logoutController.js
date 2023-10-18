@@ -1,4 +1,4 @@
-const User = require('../model/User');
+const User = require('../models/User');
 
 const handleLogout = async (req, res) => {
   // On client, also delete the accessToken
@@ -16,8 +16,7 @@ const handleLogout = async (req, res) => {
 
   // Delete refreshToken in db
   foundUser.refreshToken = '';
-  const result = await foundUser.save();
-  console.log(result);
+  await foundUser.save();
 
   res.clearCookie('jwt', { httpOnly: true, sameSite: 'None', secure: true });
   res.sendStatus(204);

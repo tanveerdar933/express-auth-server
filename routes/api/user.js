@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const userController = require('../../controllers/userController');
 const ROLES_LIST = require('../../config/roles_list');
-const verifyRoles = require('../../middleware/verifyRoles');
+const verifyRoles = require('../../middlewares/verifyRoles');
 
 router.route('/')
   .get(verifyRoles(ROLES_LIST.Admin), userController.getAllUsers)

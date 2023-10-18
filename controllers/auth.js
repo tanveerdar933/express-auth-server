@@ -41,10 +41,7 @@ const handleLogin = async (req, res) => {
     );
     // Save the refresh token with the current user in the database
     foundUser.refreshToken = refreshToken;
-    const result = await foundUser.save();
-    // Log the result and user roles (for debugging purposes)
-    console.log(result);
-    console.log(roles);
+    await foundUser.save();
 
     // Create a secure HTTP-only cookie to store the refresh token (validity 1 day)
     res.cookie('jwt', refreshToken, { httpOnly: true, secure: true, sameSite: 'None', maxAge: 24 * 60 * 60 * 1000 });
