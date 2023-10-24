@@ -38,12 +38,9 @@ app.use(cookieParser());
 //serve static files
 app.use('/', express.static(path.join(__dirname, '/assets')));
 
-// routes
-app.use('/register', require('./routes/register'));
+// public routes
 app.use('/auth', require('./routes/auth'));
-app.use('/refresh', require('./routes/refresh'));
-app.use('/logout', require('./routes/logout'));
-
+// protected routes
 app.use(verifyJWT);
 app.use('/employee', require('./routes/api/employee'));
 app.use('/user', require('./routes/api/user'));
