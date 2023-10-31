@@ -83,18 +83,45 @@ const login = async (req, res) => {
 
 
 const refreshToken = async (req, res) => {
+  // Retrieve cookies from the request
   const cookies = req.cookies;
+  // If no 'jwt' cookie is found, return a 401 Unauthorized response
   if (!cookies?.jwt) return res.sendStatus(401);
+  // Extract the refresh token from the 'jwt' cookie
   const refreshToken = cookies.jwt;
-
+  // Delete the cookie after token extraction
+  res.clearCookie('jwt', { httpOnly: true, sameSite: 'None', secure: true });
+  // Find a user associated with the provided refresh token
   const foundUser = await User.findOne({ refreshToken }).exec();
-  if (!foundUser) return res.sendStatus(403); //Forbidden 
+  // Detect refresh token reuse!
+  if (!foundUser) {
+    jwt.verify(
+      refreshToken,
+      REFRESH_TOKEN_SECRET,
+      async (err, decoded) => {
+        if (err) return res.sendStatus(403); //Forbidden
+        const hackedUser = await User.findOne({ username: decoded.username }).exec();
+        hackedUser.refreshToken = [];
+        const result = await hackedUser.save();
+        console.log(result);
+      }
+    )
+    return res.sendStatus(403); //Forbidden 
+  }
+  const newRefreshTokenArray = foundUser.refreshToken.filter(rt => rt !== refreshToken);
+
   // evaluate jwt 
   jwt.verify(
     refreshToken,
     REFRESH_TOKEN_SECRET,
-    (err, decoded) => {
+    async (err, decoded) => {
+      //if refresh token expired
+      if (err) {
+        foundUser.refreshToken = [...newRefreshTokenArray];
+        const result = await foundUser.save();
+      }
       if (err || foundUser.username !== decoded.username) return res.sendStatus(403);
+      //if refresh token is still valid
       const roles = Object.values(foundUser.roles);
       const accessToken = jwt.sign(
         {
@@ -106,6 +133,20 @@ const refreshToken = async (req, res) => {
         ACCESS_TOKEN_SECRET,
         { expiresIn: '10s' }
       );
+
+      // Create a refresh token with the username
+      const newRefreshToken = jwt.sign(
+        { "username": foundUser.username },
+        REFRESH_TOKEN_SECRET,
+        { expiresIn: '1d' }
+      );
+      // Save the refresh token with the current user in the database
+      foundUser.refreshToken = [...newRefreshTokenArray, newRefreshToken];
+      await foundUser.save();
+
+      // Create a secure HTTP-only cookie to store the refresh token (validity 1 day)
+      res.cookie('jwt', newRefreshToken, { httpOnly: true, secure: true, sameSite: 'None', maxAge: 24 * 60 * 60 * 1000 });
+
       res.json({ roles, accessToken })
     }
   );
