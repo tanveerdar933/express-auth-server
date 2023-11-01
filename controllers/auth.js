@@ -34,6 +34,7 @@ const register = async (req, res) => {
 
 // a function to handle user login
 const login = async (req, res) => {
+  const cookies = req.cookies;
   // Extract the username and password from the request body
   const { user, pwd } = req.body;
   // Check if both username and password are provided, return a 400 Bad Request if not 
@@ -60,17 +61,42 @@ const login = async (req, res) => {
       { expiresIn: '10s' }
     );
     // Create a refresh token with the username
-    const refreshToken = jwt.sign(
+    let newRefreshToken = jwt.sign(
       { "username": foundUser.username },
       REFRESH_TOKEN_SECRET,
       { expiresIn: '1d' }
     );
+
+    const newRefreshTokenArray =
+      !cookies?.jwt
+        ? foundUser.refreshToken
+        : foundUser.refreshToken.filter(rt => rt !== cookies.jwt);
+
+    if (cookies?.jwt) {
+      /*
+        1. User logs in but never uses refresh token and does not logout
+        2. Refresh token is stolen
+        3. if 1 & 2, reuse detection is needed to clear all RTs when user logs in 
+       */
+
+      const refreshToken = cookies.jwt;
+      const foundToken = await User.findOne({ refreshToken }).exec();
+
+      //Detected refresh token reuse!
+      if (!foundToken) {
+        console.log('attempted refresh token reuse at login!');
+        //clear out all previous refresh tokens
+        newRefreshTokenArray = [];
+      }
+      res.clearCookie('jwt', { httpOnly: true, sameSite: 'None', secure: true });
+    }
+
     // Save the refresh token with the current user in the database
-    foundUser.refreshToken = refreshToken;
+    foundUser.refreshToken = [...newRefreshTokenArray, newRefreshToken];
     await foundUser.save();
 
     // Create a secure HTTP-only cookie to store the refresh token (validity 1 day)
-    res.cookie('jwt', refreshToken, { httpOnly: true, secure: true, sameSite: 'None', maxAge: 24 * 60 * 60 * 1000 });
+    res.cookie('jwt', newRefreshToken, { httpOnly: true, secure: true, sameSite: 'None', maxAge: 24 * 60 * 60 * 1000 });
 
     // Send authorization roles and access token in the response
     res.json({ roles, accessToken });
@@ -167,7 +193,7 @@ const logout = async (req, res) => {
   }
 
   // Delete refreshToken in db
-  foundUser.refreshToken = '';
+  foundUser.refreshToken = foundUser.refreshToken.filter(rt => rt !== refreshToken);
   await foundUser.save();
 
   res.clearCookie('jwt', { httpOnly: true, sameSite: 'None', secure: true });
