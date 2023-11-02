@@ -43,7 +43,7 @@ app.use('/auth', require('./routes/auth'));
 // protected routes
 app.use(verifyJWT);
 app.use('/employee', require('./routes/api/employee'));
-app.use('/user', require('./routes/api/user'));
+app.use('/users', require('./routes/api/user'));
 
 app.all('*', (req, res) => {
   res.status(404);

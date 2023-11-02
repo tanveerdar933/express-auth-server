@@ -9,6 +9,7 @@ const {
 
 const register = async (req, res) => {
   const { user, pwd } = req.body;
+  console.log("register: ", user, pwd);
   if (!user || !pwd) return res.status(400).json({ 'message': 'Username and password are required.' });
 
   // check for duplicate usernames in the db
