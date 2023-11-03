@@ -5,7 +5,7 @@ const ROLES_LIST = require('../../config/roles_list');
 const verifyRoles = require('../../middlewares/verifyRoles');
 
 router.route('/getList').get(
-  // verifyRoles(ROLES_LIST.Admin),
+  verifyRoles(ROLES_LIST.Admin),
   userController.getAllUsers
 )
 router.route('/delete').delete(
